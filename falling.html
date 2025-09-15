@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Falling Object Game</title>
+  <style>
+    /* Estilo geral do corpo da página */
+    body {
+      margin: 0; /* Remove margens padrão */
+      font-family: Arial, sans-serif; /* Define a fonte do jogo */
+      text-align: center; /* Centraliza conteúdo horizontalmente */
+      background-color: #87CEEB; /* Fundo azul claro */
+    }
+
+    /* Tela inicial */
+    #startScreen {
+      display: flex; /* Usado para centralizar elementos */
+      flex-direction: column; /* Elementos em coluna */
+      justify-content: center; /* Centraliza verticalmente */
+      align-items: center; /* Centraliza horizontalmente */
+      height: 100vh; /* Tela inteira */
+    }
+
+    /* Botão start */
+    #startButton {
+      padding: 20px 40px; /* Tamanho do botão */
+      font-size: 24px; /* Tamanho do texto */
+      cursor: pointer; /* Muda o cursor para indicar que é clicável */
+    }
+
+    /* Canvas do jogo */
+    #gameCanvas {
+      background-color: #87CEEB; /* Azul claro */
+      display: none; /* Escondido até o jogo iniciar */
+      margin: auto;
+      border: 2px solid #000; /* Borda preta */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tela de início -->
+  <div id="startScreen">
+    <h1>Falling Object Game</h1>
+    <button id="startButton">Start</button>
+  </div>
+
+  <!-- Canvas do jogo -->
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+  <script>
+    // Pegando elementos HTML
+    const startScreen = document.getElementById('startScreen'); // Tela inicial
+    const startButton = document.getElementById('startButton'); // Botão de start
+    const canvas = document.getElementById('gameCanvas'); // Canvas do jogo
+    const ctx = canvas.getContext('2d'); // Contexto 2D para desenhar no canvas
+
+    // Variáveis do jogo
+    let score = 0; // Pontuação inicial
+    let lives = 3; // Número de vidas
+    let player; // Jogador
+    let objects = []; // Objetos que caem
+    let gameInterval; // Intervalo do jogo
+    let objectInterval; // Intervalo de criação de objetos
+
+    // Função para iniciar o jogo
+    function startGame() {
+      // Esconde a tela inicial e mostra o canvas
+      startScreen.style.display = 'none';
+      canvas.style.display = 'block';
+
+      // Inicializa jogador
+      player = {
+        x: canvas.width / 2 - 25, // Posição horizontal inicial
+        y: canvas.height - 50, // Posição vertical inicial (embaixo)
+        width: 50, // Largura do jogador
+        height: 50, // Altura do jogador
+        color: 'green' // Cor do jogador
+      };
+
+      // Zera pontos e vidas
+      score = 0;
+      lives = 3;
+      objects = []; // Limpa objetos antigos
+
+      // Cria objetos a cada 1.5 segundos
+      objectInterval = setInterval(createObject, 1500);
+
+      // Inicia loop do jogo (60fps)
+      gameInterval = setInterval(gameLoop, 1000/60);
+
+      // Escuta movimento do mouse
+      document.addEventListener('mousemove', movePlayer);
+    }
+
+    // Função para criar objetos que caem
+    function createObject() {
+      const size = 30; // Tamanho do objeto
+      const x = Math.random() * (canvas.width - size); // Posição horizontal aleatória
+      const speed = 2 + Math.random() * 3; // Velocidade aleatória entre 2 e 5
+      objects.push({x, y:0, size, speed, color:'red'}); // Adiciona ao array
+    }
+
+    // Função para mover jogador com mouse
+    function movePlayer(event) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      player.x = mouseX - player.width/2; // Centraliza o jogador no mouse
+      // Limita o jogador dentro do canvas
+      if(player.x < 0) player.x = 0;
+      if(player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+    }
+
+    // Função principal do jogo (loop)
+    function gameLoop() {
+      // Limpa canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Desenha jogador
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Desenha e atualiza objetos
+      for(let i = objects.length - 1; i >= 0; i--) {
+        const obj = objects[i];
+        obj.y += obj.speed; // Faz o objeto cair
+
+        // Desenha objeto
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(obj.x, obj.y, obj.size, obj.size);
+
+        // Checa colisão com jogador
+        if(obj.x < player.x + player.width &&
+           obj.x + obj.size > player.x &&
+           obj.y < player.y + player.height &&
+           obj.y + obj.size > player.y) {
+          score++; // Soma ponto
+          objects.splice(i, 1); // Remove objeto
+          continue;
+        }
+
+        // Checa se objeto passou da tela
+        if(obj.y > canvas.height) {
+          lives--; // Perde vida
+          objects.splice(i, 1); // Remove objeto
+          if(lives <= 0) {
+            endGame(); // Termina jogo
+            return;
+          }
+        }
+      }
+
+      // Desenha pontuação e vidas
+      ctx.fillStyle = 'black';
+      ctx.font = '20px Arial';
+      ctx.fillText('Score: ' + score, 10, 30);
+      ctx.fillText('Lives: ' + lives, 10, 60);
+    }
+
+    // Função para finalizar jogo
+    function endGame() {
+      clearInterval(gameInterval);
+      clearInterval(objectInterval);
+      alert('Game Over! Sua pontuação: ' + score);
+      // Volta para tela inicial
+      canvas.style.display = 'none';
+      startScreen.style.display = 'flex';
+    }
+
+    // Escuta clique no botão start
+    startButton.addEventListener('click', startGame);
+
+  </script>
+</body>
+</html>
